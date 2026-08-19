@@ -1,0 +1,37 @@
+pipeline{
+	agent any
+	
+	environment{
+	
+	IMAGE_NAME = "packet-sniffer"
+	
+	}	
+
+	stages{
+	
+		stage('checkout'){
+			steps{
+				checkout scm
+			}
+		}
+		stage('build docker image'){
+		steps{
+		echo "starting build"
+		sh "docker build -t ${IMAGE_NAME}:latest ."
+		}
+		}
+		stage('runt the script'){
+			steps{
+				sh "docker run --rm --cap-add=NET_RAW --cap-add=NET_ADMIN ${IMAGE_NAME}:latest sh -c 'python packet_sniffer.py'"
+			}
+		}
+	}	
+	post{
+		failure{
+		echo 'build, test and run failled check logs above'
+		}
+		success{
+		echo 'script ran succesfully'
+		}
+	}
+}

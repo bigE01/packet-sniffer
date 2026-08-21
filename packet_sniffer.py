@@ -12,12 +12,12 @@ def read_pcapfile():
 
 #count how many packets from the same ip fall into the same time window then compares it to count threshhold to validate if its a flood
 #not done
-def check_syn_flood(stats, src_ip, window_seconds, count_threshhold, packet):
+def check_syn_flood(stats, src_ip, window_seconds, count_threshhold):
     count = 0
     for pkt in stats:
         if pkt.haslayer(IP):
             if pkt[IP].src == src_ip:
-                if time.time() - packet["syn_timestamps_by_ip"["time_stamp"]] < window_seconds:
+                if time.time() - stats["syn_timestamps_by_ip"]["time_stamp"] < window_seconds:
                     count+=1
     if count >= count_threshhold:
             print(f"{IP} might be suspecios")
@@ -75,7 +75,6 @@ def process_packets(packet, stats):
         #checks for floding
         if check_syn_flood(stats, src_ip, 1, 100, packet):
             print(f"flood detected from {src_ip}.")     
-        return
     
 #done✅
 def print_summary(stats):

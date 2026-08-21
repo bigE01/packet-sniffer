@@ -1,4 +1,4 @@
-from scapy.all import sniff, IP, TCP, DATA, PcapReader, UDP, ICMP, ARP
+from scapy.all import sniff, IP, TCP, PcapReader, UDP, ICMP, ARP
 import time
 
 #done✅
@@ -48,6 +48,7 @@ def is_ack_packet(packets):
             return packets[TCP].flags == "A"
     return False
 
+#doe✅
 def process_packets(packet, stats):
     if (packet.haslayer(TCP)):
         stats["protocol_counts"]["TCP"] +=1
@@ -60,23 +61,20 @@ def process_packets(packet, stats):
     if is_oversized(packet, 1500) == True: 
         print("packet is over size")  
         stats["oversized_packets"].append(packet)
-        return False
-    
     if is_syn_packets(packet) == True:
         #current time for the time stamp gives time not including date
         time_stamp = time.time()
         #src ip of the current packet
         src_ip = packet[IP].src
         #checks if the ip exists in the dictionary
-        if src_ip in stats["syn_time_stamps_by_ip"]:
-            stats["syn_timestamps_by_ip"] = time_stamp
-            stats["syn_timestamps_by_ip"].append(time_stamp)
-            #checks for floding
-            if check_syn_flood(stats, src_ip, 1, 100, packet):
-                return
+        if src_ip in stats["syn_timestamps_by_ip"]:
+            stats["syn_timestamps_by_ip"][src_ip].append(time_stamp)
         else:
             stats["syn_timestamps_by_ip"][src_ip] = []
             stats["syn_timestamps_by_ip"][src_ip].append(time_stamp)
+        #checks for floding
+        if check_syn_flood(stats, src_ip, 1, 100, packet):
+            print(f"flood detected from {src_ip}.")     
         return
     
 #done✅
@@ -87,7 +85,7 @@ def main():
     stats = {"protocol_counts": {"TCP", "UDP", "ICP", "ARP"}, 
              "oversized_packets":[], 
              "syn_timestamps_by_ip":{}}
-    #capture_live("enp0s3",stats)#good line
+    capture_live("enp0s3",stats)#good line
     print_summary(stats)
 
 if __name__ == "__main__":

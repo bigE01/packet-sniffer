@@ -22,7 +22,7 @@ pipeline{
 		}
 		stage('runt the script'){
 			steps{
-				sh "docker run --rm --cap-add=NET_RAW --cap-add=NET_ADMIN ${IMAGE_NAME}:latest sh -c 'python packet_sniffer.py'"
+				sh "docker run --rm --network host --cap-add=NET_RAW --cap-add=NET_ADMIN ${IMAGE_NAME}:latest sh -c 'python packet_sniffer.py'"
 			}
 		}
 	}	

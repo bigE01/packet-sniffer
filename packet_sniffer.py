@@ -17,12 +17,12 @@ def read_pcap_file(filepath, stats):
 
 #count how many packets from the same ip fall into the same time window then compares it to count threshhold to validate if its a flood
 #not done
-def check_syn_flood(stats, src_ip, window_seconds, count_threshhold):
+def check_syn_flood(stats, src_ip, window_seconds, count_threshold):
     count = 0
     for ts in stats["syn_timestamps_by_ip"][src_ip]:
         if time.time() - ts < window_seconds:
             count+=1
-    if count >= count_threshhold:
+    if count >= count_threshold:
             print(f"{src_ip} might be suspecios")
             return True
     return False
@@ -31,7 +31,7 @@ def check_syn_flood(stats, src_ip, window_seconds, count_threshhold):
 def is_oversized(packet, threshold):
     return len(packet)>threshold
 
-#doe✅
+#done✅
 def is_syn_packets(packets):
     #checks if the packet has a tcp layer
     if packets.haslayer(TCP):

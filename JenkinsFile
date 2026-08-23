@@ -1,46 +1,48 @@
-pipeline{
-	agent any
-	
-	environment{
-	
-	IMAGE_NAME = "packet-sniffer"
-	
-	}	
-	stages{
-	
-		stage('checkout'){
-			steps{
-				checkout scm
-			}
-		}
-		stage('build docker image'){
-		steps{
-		echo "starting build"
-		sh "docker build -t ${IMAGE_NAME}:latest ."
-		}
-		}
-		stage('test'){
-			steps{
-				sh "docker run --rm -v ${WORKSPACE}:/app ${IMAGE_NAME}:latest sh -c 'pytest test_packet_sniffer.py -v --junitxml=results.xml'"
-			}
-			post{
-				always{
-					junit 'results.xml'
-				}
-			}
-		}
-		stage('runt the script'){
-			steps{
-				sh "docker run --rm --network host --cap-add=NET_RAW --cap-add=NET_ADMIN ${IMAGE_NAME}:latest sh -c 'python packet_sniffer.py --mode live --interface enp0s3'"
-			}
-		}
-	}	
-	post{
-		failure{
-		echo 'build, test and run failled check logs above'
-		}
-		success{
-		echo 'script ran succesfully'
-		}
-	}
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "packet-sniffer"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "starting build"
+                sh "docker build -t ${IMAGE_NAME}:latest ."
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh "docker run --rm ${IMAGE_NAME}:latest sh -c 'pytest test_packet_sniffer.py -v --junitxml=results.xml'"
+            }
+            post {
+                always {
+                    junit 'results.xml'
+                }
+            }
+        }
+
+        stage('Run the script') {
+            steps {
+                sh "docker run --rm ${IMAGE_NAME}:latest sh -c 'python packet_sniffer.py'"
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'build, test and run failed check logs above'
+        }
+        success {
+            echo 'script ran successfully'
+        }
+    }
 }

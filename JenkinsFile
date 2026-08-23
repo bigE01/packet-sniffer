@@ -21,7 +21,10 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh "docker run --rm ${IMAGE_NAME}:latest sh -c 'pytest test_packet_sniffer.py -v --junitxml=results.xml'"
+                sh """
+                    docker run --rm -v "${WORKSPACE}:/output" ${IMAGE_NAME}:latest sh -c \
+                    'pytest test_packet_sniffer.py -v --junitxml=/output/results.xml'
+                """
             }
             post {
                 always {

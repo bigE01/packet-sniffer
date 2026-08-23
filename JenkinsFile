@@ -42,7 +42,6 @@ pipeline {
         }
     }
 }
-
     post {
         failure {
             echo 'build, test and run failed check logs above'
@@ -51,4 +50,5 @@ pipeline {
             echo 'script ran successfully'
         }
     }
+}
 }

@@ -22,8 +22,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
-                    docker run --rm -v "${WORKSPACE}:/output" ${IMAGE_NAME}:latest sh -c \
-                    'pytest test_packet_sniffer.py -v --junitxml=/output/results.xml'
+                    docker run --rm -v "${WORKSPACE}:/output" ${IMAGE_NAME}:latest sh -c 'pytest test_packet_sniffer.py -v --junitxml=/output/results.xml'
                 """
             }
             post {
@@ -40,3 +39,20 @@ pipeline {
         }
 
         stage('Run on Live Interface') {
+            steps {
+                timeout(time: 10, unit: 'SECONDS') {
+                    sh "docker run --rm --cap-add=NET_RAW --cap-add=NET_ADMIN --network host ${IMAGE_NAME}:latest sh -c 'python packet_sniffer.py --mode live --interface eth0'"
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'build, test and run failed check logs above'
+        }
+        success {
+            echo 'script ran successfully'
+        }
+    }
+}

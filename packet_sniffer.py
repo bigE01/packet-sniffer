@@ -1,26 +1,29 @@
 from scapy.all import sniff, IP, TCP, PcapReader, UDP, ICMP, ARP
 import time
+import argparse
 
 #done✅
 def capture_live(interface, stats):
     capture = sniff(iface=interface, prn  =lambda pkt: process_packets(pkt, stats), timeout=10)
 
 #read a list of packets saved on the secondary memory instead of reading real packets✅
-def read_pcapfile():
-    data = PcapReader("capture.pcap")
-    return data
+def read_pcap_file(filepath, stats):
+    try:
+        for pkt in PcapReader(filepath):
+            process_packets(pkt, stats)
+    except FileNotFoundError:
+        print("file does not exist")
+        return False
 
 #count how many packets from the same ip fall into the same time window then compares it to count threshhold to validate if its a flood
 #not done
 def check_syn_flood(stats, src_ip, window_seconds, count_threshhold):
     count = 0
-    for pkt in stats:
-        if pkt.haslayer(IP):
-            if pkt[IP].src == src_ip:
-                if time.time() - stats["syn_timestamps_by_ip"]["time_stamp"] < window_seconds:
-                    count+=1
+    for ts in stats["syn_timestamps_by_ip"][src_ip]:
+        if time.time() - ts < window_seconds:
+            count+=1
     if count >= count_threshhold:
-            print(f"{IP} might be suspecios")
+            print(f"{src_ip} might be suspecios")
             return True
     return False
     
@@ -73,18 +76,26 @@ def process_packets(packet, stats):
             stats["syn_timestamps_by_ip"][src_ip] = []
             stats["syn_timestamps_by_ip"][src_ip].append(time_stamp)
         #checks for floding
-        if check_syn_flood(stats, src_ip, 1, 100, packet):
+        if check_syn_flood(stats, src_ip, 1, 100):
             print(f"flood detected from {src_ip}.")     
     
 #done✅
 def print_summary(stats):
-    stats.summary()
+    print(f"the are {stats['protocol_counts']['TCP']} TCP packets, {stats['protocol_counts']['UDP']} UDP packets, {stats['protocol_counts']['ICMP']} ICMP packets and {stats['protocol_counts']['ARP']} ARP packets. There were {len(stats['oversized_packets'])} over sized packets")
 
 def main():
-    stats = {"protocol_counts": {"TCP", "UDP", "ICP", "ARP"}, 
+    stats = {"protocol_counts": {"TCP": 0, "UDP": 0, "ICMP": 0, "ARP": 0}, 
              "oversized_packets":[], 
              "syn_timestamps_by_ip":{}}
-    capture_live("enp0s3",stats)#good line
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=["live", "pcap"], required=True)
+    parser.add_argument("--interface", default="enp0s3")
+    parser.add_argument("--file", default="capture.pcap")
+    args = parser.parse_args()
+    if args.mode == "live":
+        capture_live(args.interface, stats)
+    elif args.mode == "pcap":
+        read_pcap_file(args.file, stats)
     print_summary(stats)
 
 if __name__ == "__main__":

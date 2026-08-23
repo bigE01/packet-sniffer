@@ -6,7 +6,6 @@ pipeline{
 	IMAGE_NAME = "packet-sniffer"
 	
 	}	
-
 	stages{
 	
 		stage('checkout'){
@@ -19,6 +18,16 @@ pipeline{
 		echo "starting build"
 		sh "docker build -t ${IMAGE_NAME}:latest ."
 		}
+		}
+		stage('test'){
+			steps{
+				sh "docker run --rm -v ${WORKSPACE}:/app ${IMAGE_NAME}:latest sh -c 'pytest test_packet_sniffer.py -v --junitxml=results.xml'"
+			}
+			post{
+				always{
+					junit 'results.xml'
+				}
+			}
 		}
 		stage('runt the script'){
 			steps{
